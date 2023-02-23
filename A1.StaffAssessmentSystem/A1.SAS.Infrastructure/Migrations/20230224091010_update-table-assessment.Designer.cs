@@ -3,6 +3,7 @@ using System;
 using A1.SAS.Infrastructure.DBContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace A1.SAS.Infrastructure.Migrations
 {
     [DbContext(typeof(A1PlatformDbContext))]
-    partial class A1PlatformDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230224091010_update-table-assessment")]
+    partial class updatetableassessment
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

@@ -23,7 +23,7 @@ namespace A1.SAS.Infrastructure.DBContext
                                 maxRetryCount: 5,
                                 maxRetryDelay: TimeSpan.FromSeconds(30),
                                 errorNumbersToAdd: null)
-                           )
+                           ).UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
                     .EnableSensitiveDataLogging();
 
                 var ctx = new A1PlatformDbContext(contextOptionsBuilder.Options);
