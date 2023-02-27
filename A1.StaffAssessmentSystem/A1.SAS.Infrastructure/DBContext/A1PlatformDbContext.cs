@@ -13,7 +13,8 @@ namespace A1.SAS.Infrastructure.DBContext
         public DbSet<TblEmployee> Employees { get; set; }
         public DbSet<TblRange> Ranges { get; set; }
         public DbSet<TblAssessment> Assessments { get; set; }
-
+        public DbSet<TblAccount> Accounts { get; set; }
+        
         public ChangeTracker ChangeTracking()
         {
             return ChangeTracker;

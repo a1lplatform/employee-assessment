@@ -33,7 +33,7 @@ builder.Services.AddDbContext<A1PlatformDbContext>(
                     maxRetryCount: 5,
                     maxRetryDelay: TimeSpan.FromSeconds(30),
                     errorNumbersToAdd: null)
-               ), ServiceLifetime.Transient);
+               ).UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking), ServiceLifetime.Transient);
 
 builder.Services.AddCors(options =>
 {

@@ -3,6 +3,7 @@ using System;
 using A1.SAS.Infrastructure.DBContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace A1.SAS.Infrastructure.Migrations
 {
     [DbContext(typeof(A1PlatformDbContext))]
-    partial class A1PlatformDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230224070058_add-table-account")]
+    partial class addtableaccount
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -89,9 +91,6 @@ namespace A1.SAS.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("tinyint(1)");
 
-                    b.Property<Guid?>("TblEmployeeId")
-                        .HasColumnType("char(36)");
-
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
@@ -100,7 +99,7 @@ namespace A1.SAS.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TblEmployeeId");
+                    b.HasIndex("EmployeeId");
 
                     b.ToTable("Assessments");
                 });
@@ -182,9 +181,13 @@ namespace A1.SAS.Infrastructure.Migrations
 
             modelBuilder.Entity("A1.SAS.Domain.Entities.TblAssessment", b =>
                 {
-                    b.HasOne("A1.SAS.Domain.Entities.TblEmployee", null)
+                    b.HasOne("A1.SAS.Domain.Entities.TblEmployee", "Employee")
                         .WithMany("Assessments")
-                        .HasForeignKey("TblEmployeeId");
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
                 });
 
             modelBuilder.Entity("A1.SAS.Domain.Entities.TblEmployee", b =>
