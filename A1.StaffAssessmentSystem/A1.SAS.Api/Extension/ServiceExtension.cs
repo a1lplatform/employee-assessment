@@ -16,6 +16,7 @@ namespace A1.SAS.Api.Extension
             services.AddTransient(typeof(IEmployeeService), typeof(EmployeeService));
             services.AddTransient(typeof(IRangeService), typeof(RangeService));
             services.AddTransient(typeof(IAssessmentService), typeof(AssessmentService));
+            services.AddTransient(typeof(IHistoryService), typeof(HistoryService));
 
             services.AddAutoMapper(typeof(AutoMapperProfiles));            
 

@@ -25,7 +25,14 @@ namespace A1.SAS.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
-                    b.Property<string>("AccountCode")
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("Birthday")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CCCD")
                         .IsRequired()
                         .HasColumnType("longtext");
 
@@ -35,14 +42,35 @@ namespace A1.SAS.Infrastructure.Migrations
                     b.Property<string>("CreatedBy")
                         .HasColumnType("longtext");
 
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
                     b.Property<string>("FullName")
                         .IsRequired()
                         .HasColumnType("longtext");
+
+                    b.Property<short>("Gender")
+                        .HasColumnType("smallint");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("tinyint(1)");
 
                     b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("PhoneNo")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("Point")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("RangeId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("RoleName")
                         .IsRequired()
                         .HasColumnType("longtext");
 
@@ -89,9 +117,6 @@ namespace A1.SAS.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("tinyint(1)");
 
-                    b.Property<Guid?>("TblEmployeeId")
-                        .HasColumnType("char(36)");
-
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
@@ -99,8 +124,6 @@ namespace A1.SAS.Infrastructure.Migrations
                         .HasColumnType("longtext");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("TblEmployeeId");
 
                     b.ToTable("Assessments");
                 });
@@ -111,13 +134,25 @@ namespace A1.SAS.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
-                    b.Property<DateTime?>("BirthDate")
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("Birthday")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CCCD")
+                        .IsRequired()
+                        .HasColumnType("longtext");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("CreatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
                         .HasColumnType("longtext");
 
                     b.Property<string>("FullName")
@@ -130,12 +165,9 @@ namespace A1.SAS.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("tinyint(1)");
 
-                    b.Property<string>("PartpostId")
+                    b.Property<string>("PhoneNo")
                         .IsRequired()
                         .HasColumnType("longtext");
-
-                    b.Property<Guid>("RangeId")
-                        .HasColumnType("char(36)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)");
@@ -145,9 +177,73 @@ namespace A1.SAS.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("RangeId");
-
                     b.ToTable("Employees");
+                });
+
+            modelBuilder.Entity("A1.SAS.Domain.Entities.TblHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("SearchContent")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Histories");
+                });
+
+            modelBuilder.Entity("A1.SAS.Domain.Entities.TblImages", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid?>("AccountId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<Guid?>("EmployeeId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("URL")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Images");
                 });
 
             modelBuilder.Entity("A1.SAS.Domain.Entities.TblRange", b =>
@@ -165,6 +261,9 @@ namespace A1.SAS.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("tinyint(1)");
 
+                    b.Property<int>("Point")
+                        .HasColumnType("int");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -178,29 +277,6 @@ namespace A1.SAS.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Ranges");
-                });
-
-            modelBuilder.Entity("A1.SAS.Domain.Entities.TblAssessment", b =>
-                {
-                    b.HasOne("A1.SAS.Domain.Entities.TblEmployee", null)
-                        .WithMany("Assessments")
-                        .HasForeignKey("TblEmployeeId");
-                });
-
-            modelBuilder.Entity("A1.SAS.Domain.Entities.TblEmployee", b =>
-                {
-                    b.HasOne("A1.SAS.Domain.Entities.TblRange", "Range")
-                        .WithMany()
-                        .HasForeignKey("RangeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Range");
-                });
-
-            modelBuilder.Entity("A1.SAS.Domain.Entities.TblEmployee", b =>
-                {
-                    b.Navigation("Assessments");
                 });
 #pragma warning restore 612, 618
         }

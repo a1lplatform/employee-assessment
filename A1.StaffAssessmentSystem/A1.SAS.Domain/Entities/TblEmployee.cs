@@ -3,10 +3,11 @@
     public class TblEmployee: BaseEntity
     {
         public string FullName { get; set; }
-        public DateTime? BirthDate { get; set; }
+        public string CCCD { get; set; }
+        public string PhoneNo { get; set; }
+        public string Address { get; set; }
+        public string Email { get; set; }
+        public DateTime? Birthday { get; set; }
         public short Gender { get; set; }
-        public string PartpostId { get; set; }
-        public TblRange Range { get; set; }
-        public IList<TblAssessment> Assessments { get; set; }
     }
 }

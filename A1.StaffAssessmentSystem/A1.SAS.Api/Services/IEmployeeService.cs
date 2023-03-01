@@ -11,8 +11,10 @@ namespace A1.SAS.Api.Services
 
         Task<Result<IEnumerable<EmployeeDto>>> GetEmployeesAsync();
 
-        Task<Result<EmployeeDto>> GetEmployeeByPartPostIdAsync(string partPostId);
+        Task<Result<EmployeeDto>> SearchEmployeeAsync(string keyString);
 
         Task<Result<bool>> DeleteEmployeeAsync(Guid id);
+
+        Task<Result<EmployeeDto>> GetEmployeeByIdAsync(Guid id);
     }
 }

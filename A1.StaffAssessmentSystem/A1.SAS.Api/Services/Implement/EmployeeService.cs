@@ -26,8 +26,18 @@ namespace A1.SAS.Api.Services.Implement
             {
                 var employee = _mapper.Map<TblEmployee>(employeeDto);
                 employee.Id = Guid.NewGuid();
-                employee.Range.Id = Guid.NewGuid();
                 _unitOfWork.GetRepository<TblEmployee>().Add(employee);
+
+                if(employeeDto.Images != null && employeeDto.Images.Any())
+                {
+                    var images = employeeDto.Images
+                        .Select(x => new TblImages { 
+                            AccountId = null,
+                            URL = x.URL,
+                            EmployeeId = employee.Id,
+                        }).ToList();
+                    _unitOfWork.GetRepository<TblImages>().AddRange(images);
+                }               
 
                 await _unitOfWork.CommitAsync();
                 return await Result<bool>.SuccessAsync(true);
@@ -35,7 +45,7 @@ namespace A1.SAS.Api.Services.Implement
             catch (Exception e)
             {
                 throw new ApiException(e.Message);
-            }            
+            }
         }
 
         public async Task<Result<bool>> DeleteEmployeeAsync(Guid id)
@@ -51,39 +61,27 @@ namespace A1.SAS.Api.Services.Implement
             return await Result<bool>.SuccessAsync(true);
         }
 
-        public async Task<Result<EmployeeDto>> GetEmployeeByPartPostIdAsync(string partPostId)
+        public async Task<Result<EmployeeDto>> SearchEmployeeAsync(string keyString)
         {
-            if (partPostId == null) throw new ArgumentNullException(nameof(partPostId));
+            if (string.IsNullOrEmpty(keyString)) throw new ArgumentNullException(nameof(keyString));
 
             var employee = await _unitOfWork.GetRepository<TblEmployee>()
                 .GetAll()
-                .Include(e => e.Range)
-                .Where(e => !e.IsDeleted && e.PartpostId.Equals(partPostId))
+                .Where(e => !e.IsDeleted && e.CCCD.Contains(keyString))
                 .Select(e => new EmployeeDto
                 {
-                    PartpostId = e.PartpostId,
-                    BirthDate = e.BirthDate,
-                    FullName = e.FullName,
-                    Gender = e.Gender,
-                    Id = e.Id,
-                    Range = new RangeDto { Title = e.Range.Title , Id = e.Range.Id}
+                    CCCD= e.CCCD,
+                    PhoneNo= e.PhoneNo,
+                    Gender= e.Gender,
+                    Address= e.Address,
+                    Birthday= e.Birthday,
+                    Email= e.Email,
+                    FullName= e.FullName,
+                    Id= e.Id                    
                 })
                 .FirstOrDefaultAsync();
 
             if (employee == null) throw new ApiException(MessageCommon.ErrorMessage.NotFound);
-
-            employee.Assessments = await _unitOfWork.GetRepository<TblAssessment>()
-                .GetAll()
-                .Include(x => x.Employee)
-                .Where(x => !x.IsDeleted && x.EmployeeId == employee.Id)
-                .Select(x => new AssessmentDto
-                {
-                    AssessmentDate = x.AssessmentDate,
-                    Content = x.Content,
-                    EmployeeId = x.Id,
-                    IsActive = x.IsActive
-                })
-                .ToListAsync();
 
             return await Result<EmployeeDto>.SuccessAsync(employee);
         }
@@ -92,22 +90,23 @@ namespace A1.SAS.Api.Services.Implement
         {
             var employees = await _unitOfWork.GetRepository<TblEmployee>()
                 .GetAll()
-                .Include(e => e.Range)
                 .Where(e => !e.IsDeleted)
                 .Select(e => new EmployeeDto
                 {
-                    PartpostId = e.PartpostId,
-                    BirthDate = e.BirthDate,
-                    FullName = e.FullName,
-                    Gender = e.Gender,
-                    Id = e.Id,
-                    Range = new RangeDto { Title = e.Range.Title, Id = e.Range.Id}
+                    Id= e.Id,
+                    Address= e.Address,
+                    Birthday= e.Birthday,
+                    CCCD= e.CCCD,
+                    Email= e.Email,
+                    FullName= e.FullName,
+                    Gender= e.Gender,
+                    PhoneNo= e.PhoneNo,
                 })
                 .ToListAsync();
 
             if (employees == null) throw new ApiException(MessageCommon.ErrorMessage.NotFound);
             var employeeIds = employees.Select(x => x.Id).ToHashSet();
-            var assessments =  await _unitOfWork.GetRepository<TblAssessment>()
+            var assessments = await _unitOfWork.GetRepository<TblAssessment>()
                 .GetAll()
                 .Where(x => !x.IsDeleted && employeeIds.Contains(x.EmployeeId))
                 .Select(x => new AssessmentDto
@@ -130,7 +129,7 @@ namespace A1.SAS.Api.Services.Implement
         public async Task<Result<bool>> UpdateEmployeeAsync(PostEmployeeDto employeeDto)
         {
             var employee = await _unitOfWork.GetRepository<TblEmployee>()
-                .GetAll().Include(x => x.Range)
+                .GetAll()
                 .Where(x => x.Id == employeeDto.Id && !x.IsDeleted)
                 .FirstOrDefaultAsync();
 
@@ -143,6 +142,41 @@ namespace A1.SAS.Api.Services.Implement
             await _unitOfWork.CommitAsync();
 
             return await Result<bool>.SuccessAsync(true);
+        }
+
+        public async Task<Result<EmployeeDto>> GetEmployeeByIdAsync(Guid id)
+        {
+            var employee = await _unitOfWork.GetRepository<TblEmployee>()
+                .GetAll()
+                .Where(e => !e.IsDeleted && e.Id.Equals(id))
+                .Select(e => new EmployeeDto
+                {
+                    CCCD = e.CCCD,
+                    PhoneNo = e.PhoneNo,
+                    Gender = e.Gender,
+                    Address = e.Address,
+                    Birthday = e.Birthday,
+                    Email = e.Email,
+                    FullName = e.FullName,
+                    Id = e.Id
+                })
+                .FirstOrDefaultAsync();
+
+            if (employee == null) throw new ApiException(MessageCommon.ErrorMessage.NotFound);
+
+            employee.Assessments = await _unitOfWork.GetRepository<TblAssessment>()
+                .GetAll()
+                .Where(x => !x.IsDeleted && x.EmployeeId == employee.Id)
+                .Select(x => new AssessmentDto
+                {
+                    AssessmentDate = x.AssessmentDate,
+                    Content = x.Content,
+                    EmployeeId = x.Id,
+                    IsActive = x.IsActive
+                })
+                .ToListAsync();
+
+            return await Result<EmployeeDto>.SuccessAsync(employee);
         }
     }
 }
