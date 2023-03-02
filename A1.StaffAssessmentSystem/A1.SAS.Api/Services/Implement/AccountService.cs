@@ -177,7 +177,7 @@ namespace A1.SAS.Api.Services.Implement
             if (string.IsNullOrEmpty(keyString)) throw new ArgumentNullException(nameof(keyString));
 
             var employee = await (_unitOfWork.GetRepository<TblEmployee>().GetAll()
-                            .Where(x => !x.IsDeleted && x.CCCD.Contains(keyString))
+                            .Where(x => !x.IsDeleted && (x.CCCD.Contains(keyString) || x.FullName.ToLower().Contains(keyString.ToLower())))
                             .Select(x => new EmployeeDto
                             {
                                 CCCD= x.CCCD,
