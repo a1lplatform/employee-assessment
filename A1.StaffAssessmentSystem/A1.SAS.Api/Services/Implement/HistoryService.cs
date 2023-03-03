@@ -25,7 +25,11 @@ namespace A1.SAS.Api.Services.Implement
                     CreatedAt = x.CreatedAt,
                     CreatedBy = x.CreatedBy,
                     SearchContent = x.SearchContent,
-                    CreatedByName = _unitOfWork.GetRepository<TblAccount>().Get(x.CreatedBy) == null ? string.Empty : _unitOfWork.GetRepository<TblAccount>().Get(x.CreatedBy).Username
+                    CreatedByName = _unitOfWork.GetRepository<TblAccount>()
+                                                .GetAll()
+                                                .Where(a => !a.IsDeleted && x.CreatedBy == a.Id.ToString())
+                                                .Select(a => a.Username)
+                                                .FirstOrDefault()
                 })).ToListAsync();
 
             return await Result<IEnumerable<HistoryDto>>.SuccessAsync(historyDto);
@@ -42,7 +46,11 @@ namespace A1.SAS.Api.Services.Implement
                    CreatedAt = x.CreatedAt,
                    CreatedBy = x.CreatedBy,
                    SearchContent = x.SearchContent,
-                   CreatedByName = _unitOfWork.GetRepository<TblAccount>().Get(x.CreatedBy) == null ? string.Empty : _unitOfWork.GetRepository<TblAccount>().Get(x.CreatedBy).Username
+                   CreatedByName = _unitOfWork.GetRepository<TblAccount>()
+                                                .GetAll()
+                                                .Where(a => !a.IsDeleted && x.CreatedBy == a.Id.ToString())
+                                                .Select(a => a.Username)
+                                                .FirstOrDefault()
                })).ToListAsync();
 
             return await Result<IEnumerable<HistoryDto>>.SuccessAsync(historyDto);
