@@ -1,6 +1,7 @@
 ﻿
 using A1.SAS.Api.Dtos;
 using A1.SAS.Api.Errors;
+using A1.SAS.Api.Helpers;
 using A1.SAS.Domain.Entities;
 using A1.SAS.Domain.UnitOfWork;
 using A1.SAS.Infrastructure.Common;
@@ -20,7 +21,7 @@ namespace A1.SAS.Api.Services.Implement
             _mapper = mapper;
         }
 
-        public async Task<Result<bool>> AddEmployeeAsync(PostEmployeeDto employeeDto)
+        public async Task<Result<bool>> AddEmployeeAsync(PostEmployeeDto employeeDto, IReadOnlyList<IFormFile>? formFiles)
         {
             try
             {
@@ -28,16 +29,31 @@ namespace A1.SAS.Api.Services.Implement
                 employee.Id = Guid.NewGuid();
                 _unitOfWork.GetRepository<TblEmployee>().Add(employee);
 
-                if(employeeDto.Images != null && employeeDto.Images.Any())
+                #region Update images
+                if(formFiles != null && formFiles.Count > 0)
                 {
-                    var images = employeeDto.Images
-                        .Select(x => new TblImages { 
-                            AccountId = null,
-                            URL = x.URL,
-                            EmployeeId = employee.Id,
-                        }).ToList();
-                    _unitOfWork.GetRepository<TblImages>().AddRange(images);
-                }               
+                    var images = new List<TblImages>();
+                    foreach (var file in formFiles)
+                    {
+                        if (file.Length > 0)
+                        {
+                            var fileName = Guid.NewGuid().ToString();
+
+                            var uploadFile = new UploadHelper();
+
+                            uploadFile.UploadFile(file, fileName);
+
+                            images.Add(new TblImages { 
+                                URL = $"{fileName}.jpg", 
+                                EmployeeId = employee.Id, 
+                                Id = Guid.NewGuid(), 
+                                AccountId = null 
+                            });
+                        }
+                    }
+                    if(images.Count > 0) _unitOfWork.GetRepository<TblImages>().AddRange(images);
+                }
+                #endregion
 
                 await _unitOfWork.CommitAsync();
                 return await Result<bool>.SuccessAsync(true);
@@ -61,34 +77,9 @@ namespace A1.SAS.Api.Services.Implement
             return await Result<bool>.SuccessAsync(true);
         }
 
-        public async Task<Result<EmployeeDto>> SearchEmployeeAsync(string keyString)
-        {
-            if (string.IsNullOrEmpty(keyString)) throw new ArgumentNullException(nameof(keyString));
-
-            var employee = await _unitOfWork.GetRepository<TblEmployee>()
-                .GetAll()
-                .Where(e => !e.IsDeleted && e.CCCD.Contains(keyString))
-                .Select(e => new EmployeeDto
-                {
-                    CCCD= e.CCCD,
-                    PhoneNo= e.PhoneNo,
-                    Gender= e.Gender,
-                    Address= e.Address,
-                    Birthday= e.Birthday,
-                    Email= e.Email,
-                    FullName= e.FullName,
-                    Id= e.Id                    
-                })
-                .FirstOrDefaultAsync();
-
-            if (employee == null) throw new ApiException(MessageCommon.ErrorMessage.NotFound);
-
-            return await Result<EmployeeDto>.SuccessAsync(employee);
-        }
-
         public async Task<Result<IEnumerable<EmployeeDto>>> GetEmployeesAsync()
         {
-            var employees = await _unitOfWork.GetRepository<TblEmployee>()
+            var employees = await (_unitOfWork.GetRepository<TblEmployee>()
                 .GetAll()
                 .Where(e => !e.IsDeleted)
                 .Select(e => new EmployeeDto
@@ -101,32 +92,33 @@ namespace A1.SAS.Api.Services.Implement
                     FullName= e.FullName,
                     Gender= e.Gender,
                     PhoneNo= e.PhoneNo,
-                })
-                .ToListAsync();
-
-            if (employees == null) throw new ApiException(MessageCommon.ErrorMessage.NotFound);
-            var employeeIds = employees.Select(x => x.Id).ToHashSet();
-            var assessments = await _unitOfWork.GetRepository<TblAssessment>()
-                .GetAll()
-                .Where(x => !x.IsDeleted && employeeIds.Contains(x.EmployeeId))
-                .Select(x => new AssessmentDto
-                {
-                    AssessmentDate = x.AssessmentDate,
-                    Content = x.Content,
-                    EmployeeId = x.EmployeeId,
-                    IsActive = x.IsActive
-                })
-                .ToListAsync();
-
-            foreach (var emp in employees)
-            {
-                emp.Assessments = assessments?.Where(x => x.EmployeeId.Equals(emp.Id)).ToList();
-            }
+                    Assessments = _unitOfWork.GetRepository<TblAssessment>()
+                                            .GetAll()
+                                            .Where(x => !x.IsDeleted && e.Id == x.EmployeeId)
+                                            .Select(x => new AssessmentDto
+                                            {
+                                                AssessmentDate = x.AssessmentDate,
+                                                Content = x.Content,
+                                                EmployeeId = x.EmployeeId,
+                                                IsActive = x.IsActive
+                                            })
+                                            .ToList(),
+                    Images = _unitOfWork.GetRepository<TblImages>()
+                                                    .GetAll()
+                                                    .Where(a => a.EmployeeId == e.Id && !a.IsDeleted)
+                                                    .Select(a => new ImageDtos
+                                                    {
+                                                        Id = a.Id,
+                                                        EmployeeId = a.EmployeeId,
+                                                        URL = a.URL,
+                                                    }).ToList()
+                }))
+                .ToListAsync();            
 
             return await Result<IEnumerable<EmployeeDto>>.SuccessAsync(employees);
         }
 
-        public async Task<Result<bool>> UpdateEmployeeAsync(PostEmployeeDto employeeDto)
+        public async Task<Result<bool>> UpdateEmployeeAsync(PostEmployeeDto employeeDto, IReadOnlyList<IFormFile>? formFiles)
         {
             var employee = await _unitOfWork.GetRepository<TblEmployee>()
                 .GetAll()
@@ -139,6 +131,49 @@ namespace A1.SAS.Api.Services.Implement
 
             _unitOfWork.GetRepository<TblEmployee>().Update(employee);
 
+            #region Update images
+            if (formFiles != null && formFiles.Count > 0)
+            {
+                var images = new List<TblImages>();
+                // remove all image old
+                if(employeeDto.Images != null && employeeDto.Images.Count > 0) {
+                    foreach (var image in employeeDto.Images)
+                    {
+                        new UploadHelper().DeleteFile(image.URL);
+                        images.Add(new TblImages
+                        {
+                            URL = image.URL,
+                            EmployeeId = image.EmployeeId,
+                            Id = image.Id,
+                            AccountId = image.AccountId,
+                            IsDeleted = true
+                        });
+                    }
+                }        
+                
+                foreach (var file in formFiles)
+                {
+                    if (file.Length > 0)
+                    {
+                        var fileName = Guid.NewGuid().ToString();
+
+                        var uploadFile = new UploadHelper();
+
+                        uploadFile.UploadFile(file, fileName);
+
+                        images.Add(new TblImages
+                        {
+                            URL = $"{fileName}.jpg",
+                            EmployeeId = employee.Id,
+                            Id = Guid.NewGuid(),
+                            AccountId = null
+                        });
+                    }
+                }
+                if (images.Count > 0) _unitOfWork.GetRepository<TblImages>().AddRange(images);
+            }
+            #endregion
+
             await _unitOfWork.CommitAsync();
 
             return await Result<bool>.SuccessAsync(true);
@@ -146,7 +181,7 @@ namespace A1.SAS.Api.Services.Implement
 
         public async Task<Result<EmployeeDto>> GetEmployeeByIdAsync(Guid id)
         {
-            var employee = await _unitOfWork.GetRepository<TblEmployee>()
+            var employee = await (_unitOfWork.GetRepository<TblEmployee>()
                 .GetAll()
                 .Where(e => !e.IsDeleted && e.Id.Equals(id))
                 .Select(e => new EmployeeDto
@@ -158,23 +193,29 @@ namespace A1.SAS.Api.Services.Implement
                     Birthday = e.Birthday,
                     Email = e.Email,
                     FullName = e.FullName,
-                    Id = e.Id
-                })
-                .FirstOrDefaultAsync();
-
-            if (employee == null) throw new ApiException(MessageCommon.ErrorMessage.NotFound);
-
-            employee.Assessments = await _unitOfWork.GetRepository<TblAssessment>()
-                .GetAll()
-                .Where(x => !x.IsDeleted && x.EmployeeId == employee.Id)
-                .Select(x => new AssessmentDto
-                {
-                    AssessmentDate = x.AssessmentDate,
-                    Content = x.Content,
-                    EmployeeId = x.Id,
-                    IsActive = x.IsActive
-                })
-                .ToListAsync();
+                    Id = e.Id,
+                    Assessments = _unitOfWork.GetRepository<TblAssessment>()
+                                            .GetAll()
+                                            .Where(x => !x.IsDeleted && e.Id == x.EmployeeId)
+                                            .Select(x => new AssessmentDto
+                                            {
+                                                AssessmentDate = x.AssessmentDate,
+                                                Content = x.Content,
+                                                EmployeeId = x.EmployeeId,
+                                                IsActive = x.IsActive
+                                            })
+                                            .ToList(),
+                    Images = _unitOfWork.GetRepository<TblImages>()
+                                                    .GetAll()
+                                                    .Where(a => a.EmployeeId == e.Id && !a.IsDeleted)
+                                                    .Select(a => new ImageDtos
+                                                    {
+                                                        Id = a.Id,
+                                                        EmployeeId = a.EmployeeId,
+                                                        URL = a.URL,
+                                                    }).ToList()
+                }))
+                .FirstOrDefaultAsync();            
 
             return await Result<EmployeeDto>.SuccessAsync(employee);
         }

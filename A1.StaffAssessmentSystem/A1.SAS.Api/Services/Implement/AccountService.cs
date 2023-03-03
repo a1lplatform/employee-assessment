@@ -8,8 +8,6 @@ using A1.SAS.Infrastructure.Common;
 using A1.SAS.Infrastructure.Wrappers;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Drawing;
 using System.Security.Authentication;
 
 namespace A1.SAS.Api.Services.Implement
@@ -58,13 +56,40 @@ namespace A1.SAS.Api.Services.Implement
             return await Result<bool>.SuccessAsync(true);
         }
 
-        public async Task<Result<string>> AddAccountAsync(AccountDto accountDto)
+        public async Task<Result<string>> AddAccountAsync(AccountDto accountDto, IReadOnlyList<IFormFile>? formFiles)
         {
             var account = _mapper.Map<TblAccount>(accountDto);
             account.Id = Guid.NewGuid();
             account.PasswordHash = Utils.HashPassword(accountDto.Password);
 
             _unitOfWork.GetRepository<TblAccount>().Add(account);
+
+            #region Update images
+            if (formFiles != null && formFiles.Count > 0)
+            {
+                var images = new List<TblImages>();
+                foreach (var file in formFiles)
+                {
+                    if (file.Length > 0)
+                    {
+                        var fileName = Guid.NewGuid().ToString();
+
+                        var uploadFile = new UploadHelper();
+
+                        uploadFile.UploadFile(file, fileName);
+
+                        images.Add(new TblImages
+                        {
+                            URL = $"{fileName}.jpg",
+                            EmployeeId = null,
+                            Id = Guid.NewGuid(),
+                            AccountId = account.Id
+                        });
+                    }
+                }
+                if (images.Count > 0) _unitOfWork.GetRepository<TblImages>().AddRange(images);
+            }
+            #endregion
 
             await _unitOfWork.CommitAsync();
 
@@ -88,7 +113,7 @@ namespace A1.SAS.Api.Services.Implement
 
         public async Task<Result<IEnumerable<AccountDto>>> GetAccountsAsync()
         {
-            var accounts = await _unitOfWork.GetRepository<TblAccount>()
+            var accounts = await (_unitOfWork.GetRepository<TblAccount>()
                 .GetAll().Where(x => !x.IsDeleted)
                 .Select(x => new AccountDto
                 {
@@ -104,7 +129,25 @@ namespace A1.SAS.Api.Services.Implement
                     RangeId=x.RangeId,
                     RoleName=x.RoleName,
                     Id = x.Id,
-                })
+                    Images = _unitOfWork.GetRepository<TblImages>()
+                                        .GetAll()
+                                        .Where(i => !i.IsDeleted && i.AccountId == x.Id)
+                                        .Select(i => new ImageDtos {
+                                            Id= i.Id,
+                                            AccountId= i.AccountId,
+                                            EmployeeId= i.EmployeeId,
+                                            URL = i.URL
+                                        }).ToList(),
+                    Range = _unitOfWork.GetRepository<TblRange>()
+                                        .GetAll()
+                                        .Where(i => !i.IsDeleted && i.Id == x.RangeId)
+                                        .Select(i => new RangeDto
+                                        {
+                                            Id = i.Id,
+                                            Point = i.Point,
+                                            Title = i.Title,
+                                        }).FirstOrDefault(),
+                }))
                 .ToListAsync();
 
             return await Result<IEnumerable<AccountDto>>.SuccessAsync(accounts);
@@ -141,7 +184,7 @@ namespace A1.SAS.Api.Services.Implement
 
         }
 
-        public async Task<Result<bool>> UpdateAccountAsync(AccountDto accountDto)
+        public async Task<Result<bool>> UpdateAccountAsync(AccountDto accountDto, IReadOnlyList<IFormFile>? formFiles)
         {
             var account = await _unitOfWork.GetRepository<TblAccount>().GetAsync(accountDto.Id);
 
@@ -151,6 +194,50 @@ namespace A1.SAS.Api.Services.Implement
             account.PasswordHash = Utils.HashPassword(accountDto.Password);
 
             _unitOfWork.GetRepository<TblAccount>().Update(account);
+
+            #region Update images
+            if (formFiles != null && formFiles.Count > 0)
+            {
+                var images = new List<TblImages>();
+                // remove all image old
+                if (accountDto.Images != null && accountDto.Images.Count > 0)
+                {
+                    foreach (var image in accountDto.Images)
+                    {
+                        new UploadHelper().DeleteFile(image.URL);
+                        images.Add(new TblImages
+                        {
+                            URL = image.URL,
+                            EmployeeId = image.EmployeeId,
+                            Id = image.Id,
+                            AccountId = image.AccountId,
+                            IsDeleted = true
+                        });
+                    }
+                }
+
+                foreach (var file in formFiles)
+                {
+                    if (file.Length > 0)
+                    {
+                        var fileName = Guid.NewGuid().ToString();
+
+                        var uploadFile = new UploadHelper();
+
+                        uploadFile.UploadFile(file, fileName);
+
+                        images.Add(new TblImages
+                        {
+                            URL = $"{fileName}.jpg",
+                            EmployeeId = null,
+                            Id = Guid.NewGuid(),
+                            AccountId = account.Id
+                        });
+                    }
+                }
+                if (images.Count > 0) _unitOfWork.GetRepository<TblImages>().AddRange(images);
+            }
+            #endregion
 
             await _unitOfWork.CommitAsync();
 

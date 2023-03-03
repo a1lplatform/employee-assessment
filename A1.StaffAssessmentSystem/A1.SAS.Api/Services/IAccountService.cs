@@ -5,8 +5,8 @@ namespace A1.SAS.Api.Services
 {
     public interface IAccountService
     {
-        Task<Result<string>> AddAccountAsync(AccountDto accountDto);
-        Task<Result<bool>> UpdateAccountAsync(AccountDto accountDto);
+        Task<Result<string>> AddAccountAsync(AccountDto accountDto, IReadOnlyList<IFormFile>? formFiles);
+        Task<Result<bool>> UpdateAccountAsync(AccountDto accountDto, IReadOnlyList<IFormFile>? formFiles);
         Task<Result<IEnumerable<AccountDto>>> GetAccountsAsync();
         Task<Result<bool>> DeleteAccountAsync(Guid accountId);
         Task<Result<AccountDto>> LoginAsync(LoginDto loginDto);

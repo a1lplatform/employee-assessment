@@ -78,4 +78,11 @@ app.UseEndpoints(endpoints =>
     endpoints.MapControllers();
 });
 
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(
+           Path.Combine(Directory.GetCurrentDirectory())),
+    RequestPath = ""
+});
+
 await app.RunAsync();

@@ -34,9 +34,12 @@ namespace A1.SAS.Api.Controllers
         /// <param name="accountDto"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<ActionResult<Guid>> Create(AccountDto accountDto)
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult<Guid>> Create([FromForm] AccountDto accountDto)
         {
-            var account = await _accountService.AddAccountAsync(accountDto);
+            var files = Request.Form.Files;
+
+            var account = await _accountService.AddAccountAsync(accountDto, files);
 
             return Ok(account);
         }
@@ -47,9 +50,12 @@ namespace A1.SAS.Api.Controllers
         /// <param name="accountDto"></param>
         /// <returns></returns>
         [HttpPost("register")]
-        public async Task<ActionResult<Guid>> Register(AccountDto accountDto)
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult<Guid>> Register([FromForm] AccountDto accountDto)
         {
-            var account = await _accountService.AddAccountAsync(accountDto);
+            var files = Request.Form.Files;
+
+            var account = await _accountService.AddAccountAsync(accountDto, files);
 
             return Ok(account);
         }
@@ -59,9 +65,12 @@ namespace A1.SAS.Api.Controllers
         /// <param name="accountDto"></param>
         /// <returns></returns>
         [HttpPut]
-        public async Task<ActionResult> Update(AccountDto accountDto)
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult> Update([FromForm] AccountDto accountDto)
         {
-            await _accountService.UpdateAccountAsync(accountDto);
+            var files = Request.Form.Files;
+
+            await _accountService.UpdateAccountAsync(accountDto, files);
 
             return StatusCode(StatusCodes.Status204NoContent);
         }
