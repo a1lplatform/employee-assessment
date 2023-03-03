@@ -2,7 +2,7 @@
 {
     public class AccountDto
     {
-        public Guid Id { get; set; }
+        public Guid? Id { get; set; }
 
         public string Username { get; set; }
         public string Password { get; set; }
@@ -17,5 +17,6 @@
         public short Gender { get; set; }
         public Guid RangeId { get; set; }
         public RangeDto? Range { get; set; }
+        public IList<ImageDtos>? Images { get; set; }
     }
 }

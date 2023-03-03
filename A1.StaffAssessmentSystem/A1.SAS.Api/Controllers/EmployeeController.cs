@@ -48,9 +48,12 @@ namespace A1.SAS.Api.Controllers
         /// <param name="employeeDto"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<ActionResult<Guid>> Create(PostEmployeeDto employeeDto)
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult<Guid>> Create([FromForm] PostEmployeeDto employeeDto)
         {
-            var employee = await _employeeService.AddEmployeeAsync(employeeDto);
+            var files = Request.Form.Files;
+
+            var employee = await _employeeService.AddEmployeeAsync(employeeDto, files);
 
             return Ok(employee);
         }
@@ -61,9 +64,12 @@ namespace A1.SAS.Api.Controllers
         /// <param name="employeeDto"></param>
         /// <returns></returns>
         [HttpPut]
-        public async Task<ActionResult> Update(PostEmployeeDto employeeDto)
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult> Update([FromForm] PostEmployeeDto employeeDto)
         {
-            await _employeeService.UpdateEmployeeAsync(employeeDto);
+            var files = Request.Form.Files;
+
+            await _employeeService.UpdateEmployeeAsync(employeeDto, files);
 
             return StatusCode(StatusCodes.Status204NoContent);
         }

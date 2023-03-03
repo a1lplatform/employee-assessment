@@ -6,7 +6,7 @@
     }
     public class PostEmployeeDto
     {
-        public Guid Id { get; set; }
+        public Guid? Id { get; set; }
         public string FullName { get; set; }
         public string CCCD { get; set; }
         public string PhoneNo { get; set; }

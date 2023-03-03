@@ -5,13 +5,11 @@ namespace A1.SAS.Api.Services
 {
     public interface IEmployeeService
     {
-        Task<Result<bool>> AddEmployeeAsync(PostEmployeeDto employeeDto);
+        Task<Result<bool>> AddEmployeeAsync(PostEmployeeDto employeeDto, IReadOnlyList<IFormFile>? formFiles);
 
-        Task<Result<bool>> UpdateEmployeeAsync(PostEmployeeDto employeeDto);
+        Task<Result<bool>> UpdateEmployeeAsync(PostEmployeeDto employeeDto, IReadOnlyList<IFormFile>? formFiles);
 
         Task<Result<IEnumerable<EmployeeDto>>> GetEmployeesAsync();
-
-        Task<Result<EmployeeDto>> SearchEmployeeAsync(string keyString);
 
         Task<Result<bool>> DeleteEmployeeAsync(Guid id);
 
