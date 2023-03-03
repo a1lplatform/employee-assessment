@@ -47,7 +47,7 @@ namespace A1.SAS.Api.Services.Implement
         {
             var ranges = await _unitOfWork.GetRepository<TblRange>()
                 .GetAll().Where(x => !x.IsDeleted)
-                .Select(x => new RangeDto { Id = x.Id, Title = x.Title })
+                .Select(x => new RangeDto { Id = x.Id, Title = x.Title, Point = x.Point })
                 .OrderBy(x => x.Title)
                 .ToListAsync();
 
@@ -62,7 +62,7 @@ namespace A1.SAS.Api.Services.Implement
                 .Where(x => !x.IsDeleted && ids.Contains(x.Id))
                 .ToListAsync();
 
-            _mapper.Map<List<RangeDto>, List<TblRange>>(rangeList, ranges);
+            _mapper.Map(rangeList, ranges);
 
             _unitOfWork.GetRepository<TblRange>().UpdateRange(ranges);
             await _unitOfWork.CommitAsync();

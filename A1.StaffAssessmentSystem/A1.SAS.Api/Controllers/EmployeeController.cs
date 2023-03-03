@@ -29,15 +29,15 @@ namespace A1.SAS.Api.Controllers
         }
 
         /// <summary>
-        /// Get Employee By Part PostId
+        /// Search Employee By Id Async
         /// </summary>
-        /// <param name="partPostId"></param>
+        /// <param name="keyString"></param>
         /// <returns></returns>
-        [HttpGet("partPostId")]
-        public async Task<ActionResult<IEnumerable<EmployeeDto>>> GetEmployeeByPartPostIdAsync(string partPostId)
+        [HttpGet("{id}")]
+        public async Task<ActionResult<IEnumerable<EmployeeDto>>> GetEmployeeByIdAsync(Guid id)
         {
 
-            var employeeDto = await _employeeService.GetEmployeeByPartPostIdAsync(partPostId);
+            var employeeDto = await _employeeService.GetEmployeeByIdAsync(id);
 
             return Ok(employeeDto);
         }

@@ -8,6 +8,8 @@ using A1.SAS.Infrastructure.Common;
 using A1.SAS.Infrastructure.Wrappers;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Drawing;
 using System.Security.Authentication;
 
 namespace A1.SAS.Api.Services.Implement
@@ -22,24 +24,57 @@ namespace A1.SAS.Api.Services.Implement
             _mapper = mapper;
         }
 
+        public async Task<Result<bool>> SetPoint(Guid accountId, int point)
+        {
+            var account = await _unitOfWork.GetRepository<TblAccount>()
+                .GetAll().Where(x => x.Id == accountId && !x.IsDeleted)
+                .FirstOrDefaultAsync();
+
+            if (account == null) throw new ApiException(MessageCommon.ErrorMessage.NotFound);
+
+            account.Point = point;
+
+            _unitOfWork.GetRepository<TblAccount>().Update(account);
+
+            await _unitOfWork.CommitAsync();
+
+            return await Result<bool>.SuccessAsync(true);
+        }
+
+        public async Task<Result<bool>> SetRange(Guid accountId, Guid rangeId)
+        {
+            var account = await _unitOfWork.GetRepository<TblAccount>()
+                .GetAll().Where(x => x.Id == accountId && !x.IsDeleted)
+                .FirstOrDefaultAsync();
+
+            if (account == null) throw new ApiException(MessageCommon.ErrorMessage.NotFound);
+
+            account.RangeId = rangeId;
+
+            _unitOfWork.GetRepository<TblAccount>().Update(account);
+
+            await _unitOfWork.CommitAsync();
+
+            return await Result<bool>.SuccessAsync(true);
+        }
+
         public async Task<Result<string>> AddAccountAsync(AccountDto accountDto)
         {
             var account = _mapper.Map<TblAccount>(accountDto);
             account.Id = Guid.NewGuid();
             account.PasswordHash = Utils.HashPassword(accountDto.Password);
-            account.AccountCode = Utils.GenerateA1PCode("NV");
 
             _unitOfWork.GetRepository<TblAccount>().Add(account);
 
             await _unitOfWork.CommitAsync();
 
-            return await Result<string>.SuccessAsync(account.AccountCode);
+            return await Result<string>.SuccessAsync(account.Id.ToString());
         }
 
-        public async Task<Result<bool>> DeleteAccountAsync(string accountCode)
+        public async Task<Result<bool>> DeleteAccountAsync(Guid accountId)
         {
             var account = await _unitOfWork.GetRepository<TblAccount>()
-                .GetAll().Where(x => x.AccountCode == accountCode && !x.IsDeleted)
+                .GetAll().Where(x => x.Id == accountId && !x.IsDeleted)
                 .FirstOrDefaultAsync();
 
             if (account == null) throw new ApiException(MessageCommon.ErrorMessage.NotFound);
@@ -51,32 +86,23 @@ namespace A1.SAS.Api.Services.Implement
             return await Result<bool>.SuccessAsync(true);
         }
 
-        public async Task<Result<AccountDto>> GetAccountByAccountCodeAsync(string accountCode)
-        {
-            var account =await _unitOfWork.GetRepository<TblAccount>()
-                .GetAll().Where(x => x.AccountCode == accountCode && !x.IsDeleted)
-                .Select(x => new AccountDto
-                {
-                    AccountCode = x.AccountCode,
-                    FullName= x.FullName,
-                    Username= x.Username,
-                    Id = x.Id,
-                })
-                .FirstOrDefaultAsync();
-            if (account == null) throw new ApiException(MessageCommon.ErrorMessage.NotFound);
-
-            return await Result<AccountDto>.SuccessAsync(account);
-        }
-
         public async Task<Result<IEnumerable<AccountDto>>> GetAccountsAsync()
         {
             var accounts = await _unitOfWork.GetRepository<TblAccount>()
                 .GetAll().Where(x => !x.IsDeleted)
                 .Select(x => new AccountDto
                 {
-                    AccountCode = x.AccountCode,
                     FullName = x.FullName,
                     Username = x.Username,
+                    Address= x.Address,
+                    Birthday=x.Birthday,
+                    CCCD=x.CCCD,
+                    Email=x.Email,
+                    Gender=x.Gender,
+                    PhoneNo=x.PhoneNo,
+                    Point=x.Point,
+                    RangeId=x.RangeId,
+                    RoleName=x.RoleName,
                     Id = x.Id,
                 })
                 .ToListAsync();
@@ -96,10 +122,19 @@ namespace A1.SAS.Api.Services.Implement
             if (!Utils.VerifyPassword(loginDto.Password, account.PasswordHash))
                 throw new AuthenticationException();
 
-            var accountDto = new AccountDto {
-                Username = account.Username,
-                AccountCode= account.AccountCode,
+            var accountDto = new AccountDto
+            {
                 FullName = account.FullName,
+                Username = account.Username,
+                Address = account.Address,
+                Birthday = account.Birthday,
+                CCCD = account.CCCD,
+                Email = account.Email,
+                Gender = account.Gender,
+                PhoneNo = account.PhoneNo,
+                Point = account.Point,
+                RangeId = account.RangeId,
+                RoleName = account.RoleName,
                 Id = account.Id,
             };
             return await Result<AccountDto>.SuccessAsync(accountDto);
@@ -112,8 +147,7 @@ namespace A1.SAS.Api.Services.Implement
 
             if (account == null) throw new ApiException(MessageCommon.ErrorMessage.NotFound);
 
-            account.FullName= accountDto.FullName;
-            account.Username= accountDto.Username;
+            _mapper.Map(accountDto, account);
             account.PasswordHash = Utils.HashPassword(accountDto.Password);
 
             _unitOfWork.GetRepository<TblAccount>().Update(account);
@@ -121,6 +155,76 @@ namespace A1.SAS.Api.Services.Implement
             await _unitOfWork.CommitAsync();
 
             return await Result<bool>.SuccessAsync(true);
+        }
+
+        public async Task<Result<List<EmployeeDto>>> SearchEmployeeAsync(Guid accountId, string keyString)
+        {
+            #region Check the remaining points of the account
+
+            var account = await _unitOfWork.GetRepository<TblAccount>().GetAsync(accountId);
+            if (account == null) throw new InvalidOperationException();
+
+            var accountRange = await _unitOfWork.GetRepository<TblRange>()
+                .GetAll()
+                .Where(x => !x.IsDeleted && x.Id == account.RangeId)
+                .FirstOrDefaultAsync();
+
+            if (accountRange == null) throw new InvalidOperationException();
+            if (account.Point - accountRange.Point < 0) throw new ApiException(MessageCommon.ErrorMessage.NotRemainingPoint);
+
+            #endregion
+
+            if (string.IsNullOrEmpty(keyString)) throw new ArgumentNullException(nameof(keyString));
+
+            var employee = await (_unitOfWork.GetRepository<TblEmployee>().GetAll()
+                            .Where(x => !x.IsDeleted && (x.CCCD.Contains(keyString) || x.FullName.ToLower().Contains(keyString.ToLower())))
+                            .Select(x => new EmployeeDto
+                            {
+                                CCCD= x.CCCD,
+                                Address= x.Address,
+                                Birthday= x.Birthday,
+                                Email= x.Email,
+                                FullName= x.FullName,
+                                Gender= x.Gender,
+                                Id= x.Id,
+                                PhoneNo= x.PhoneNo,
+                                Assessments = _unitOfWork.GetRepository<TblAssessment>()
+                                                    .GetAll()
+                                                    .Where(a => a.EmployeeId == x.Id && !a.IsDeleted)
+                                                    .Select(a => new AssessmentDto { 
+                                                        Id= a.Id,
+                                                        EmployeeId= a.EmployeeId,
+                                                        AssessmentDate = a.AssessmentDate,
+                                                        Content= a.Content,
+                                                        IsActive = a.IsActive
+                                                    }).ToList(),
+                                Images = _unitOfWork.GetRepository<TblImages>()
+                                                    .GetAll()
+                                                    .Where(a => a.EmployeeId == x.Id && !a.IsDeleted)
+                                                    .Select(a => new ImageDtos
+                                                    {
+                                                        Id = a.Id,
+                                                        EmployeeId= a.EmployeeId,
+                                                        URL= a.URL,
+                                                    }).ToList(),
+                            })).ToListAsync();
+
+            #region deduct points from the account and add history
+
+            account.Point = account.Point - accountRange.Point;
+
+            _unitOfWork.GetRepository<TblAccount>().Update(account);
+
+            var history = new TblHistory { 
+                Id = Guid.NewGuid(),
+                CreatedBy = accountId.ToString(),
+                SearchContent = keyString
+            };
+            _unitOfWork.GetRepository<TblHistory>().Add(history);
+            await _unitOfWork.CommitAsync();
+            #endregion
+
+            return await Result<List<EmployeeDto>>.SuccessAsync(employee);
         }
     }
 }

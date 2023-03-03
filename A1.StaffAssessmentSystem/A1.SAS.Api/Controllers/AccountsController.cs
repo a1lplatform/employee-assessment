@@ -29,20 +29,6 @@ namespace A1.SAS.Api.Controllers
         }
 
         /// <summary>
-        /// Get Account By Account Code
-        /// </summary>
-        /// <param name="accountCode"></param>
-        /// <returns></returns>
-        [HttpGet("accountCode")]
-        public async Task<ActionResult<IEnumerable<AccountDto>>> GetAccountByAccountCodeAsync(string accountCode)
-        {
-
-            var accountDto = await _accountService.GetAccountByAccountCodeAsync(accountCode);
-
-            return Ok(accountDto);
-        }
-
-        /// <summary>
         /// Create Account
         /// </summary>
         /// <param name="accountDto"></param>
@@ -55,6 +41,18 @@ namespace A1.SAS.Api.Controllers
             return Ok(account);
         }
 
+        /// <summary>
+        /// Register Account
+        /// </summary>
+        /// <param name="accountDto"></param>
+        /// <returns></returns>
+        [HttpPost("register")]
+        public async Task<ActionResult<Guid>> Register(AccountDto accountDto)
+        {
+            var account = await _accountService.AddAccountAsync(accountDto);
+
+            return Ok(account);
+        }
         /// <summary>
         /// Update Account
         /// </summary>
@@ -88,13 +86,27 @@ namespace A1.SAS.Api.Controllers
         /// <param name="accountCode"></param>
         /// <returns></returns>
         [HttpDelete]
-        [Route("{accountCode}")]
+        [Route("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
-        public async Task<ActionResult> DeleteAccount(string accountCode)
+        public async Task<ActionResult> DeleteAccount(Guid id)
         {
-            await _accountService.DeleteAccountAsync(accountCode);
+            await _accountService.DeleteAccountAsync(id);
 
             return NoContent();
+        }
+
+        /// <summary>
+        /// Search Employee Async
+        /// </summary>
+        /// <param name="accountCode"></param>
+        /// <returns></returns>
+        [HttpGet("search")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<ActionResult> SearchEmployeeAsync(Guid accountId, string keyString)
+        {
+            var result = await _accountService.SearchEmployeeAsync(accountId, keyString);
+
+            return Ok(result);
         }
     }
 }

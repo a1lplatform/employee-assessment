@@ -5,6 +5,8 @@
         public static class ErrorMessage
         {
             public static string NotFound = "Không tìm thấy dữ liệu.";
+            public static string NotFoundAccount = "Không tìm thấy dữ liệu.";
+            public static string NotRemainingPoint = "Tài khoản của bạn đã hết điểm.";
         }
     }
 }

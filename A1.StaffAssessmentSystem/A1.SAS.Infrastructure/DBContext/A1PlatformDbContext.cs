@@ -14,6 +14,8 @@ namespace A1.SAS.Infrastructure.DBContext
         public DbSet<TblRange> Ranges { get; set; }
         public DbSet<TblAssessment> Assessments { get; set; }
         public DbSet<TblAccount> Accounts { get; set; }
+        public DbSet<TblImages> Images { get; set; }
+        public DbSet<TblHistory> Histories { get; set; }
         
         public ChangeTracker ChangeTracking()
         {
