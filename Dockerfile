@@ -8,9 +8,9 @@ EXPOSE 443
 
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 WORKDIR /app
-COPY ["A1.StaffAssessmentSystem/A1.SAS.Api/A1.SAS.Api.csproj", "A1.SAS.Api/"]
-COPY ["A1.StaffAssessmentSystem/A1.SAS.Domain/A1.SAS.Domain.csproj", "A1.SAS.Domain/"]
-COPY ["A1.StaffAssessmentSystem/A1.SAS.Infrastructure/A1.SAS.Infrastructure.csproj", "A1.SAS.Infrastructure/"]
+COPY ["A1.SAS.Api/A1.SAS.Api.csproj", "A1.SAS.Api/"]
+COPY ["A1.SAS.Domain/A1.SAS.Domain.csproj", "A1.SAS.Domain/"]
+COPY ["A1.SAS.Infrastructure/A1.SAS.Infrastructure.csproj", "A1.SAS.Infrastructure/"]
 
 RUN dotnet restore "A1.SAS.Api/A1.SAS.Api.csproj"
 COPY . .

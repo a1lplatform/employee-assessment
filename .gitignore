@@ -400,6 +400,11 @@ FodyWeavers.xsd
 *.suo
 *.user
 _ReSharper.*
-bin
+[Bb]in
 obj
 packages
+A1.SAS.Domain/obj
+*.v2
+*.props
+*.v2
+.vs/
