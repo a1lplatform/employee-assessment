@@ -30,12 +30,12 @@ namespace A1.SAS.Infrastructure.DBContext
                 {
                     case EntityState.Added:
                         entry.Entity.CreatedAt = DateTime.Now;
-                        entry.Entity.CreatedBy = "admin";
+                        entry.Entity.CreatedBy = string.IsNullOrEmpty(entry.Entity.CreatedBy) ? "admin" : entry.Entity.CreatedBy;
                         break;
 
                     case EntityState.Modified:
                         entry.Entity.UpdatedAt = DateTime.Now;
-                        entry.Entity.UpdatedBy = "admin";
+                        entry.Entity.UpdatedBy = string.IsNullOrEmpty(entry.Entity.UpdatedBy) ? "admin" : entry.Entity.UpdatedBy;
                         break;
                 }
             }
